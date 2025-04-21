@@ -10,4 +10,5 @@ public enum TerrainType {
     HERO,
     ROAD,
     CITY
+
 }

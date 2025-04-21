@@ -2,12 +2,18 @@ package view;
 
 import model.City;
 import model.heroes.Hero;
+import model.map.GameMap;
 import model.map.TerrainType;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
+import model.buildings.Building;
+import model.buildings.WitcherSchool;
 
 public class MapView {
+    private GameMap gameMap;
+
+    public MapView(GameMap gameMap) {this.gameMap = gameMap;
+    }
+
     public void displayMap(int heroX, int heroY, int aiHeroX, int aiHeroY, int mapWidth, int mapHeight, TerrainType[][] terrain, String[][] mapData, int castleX, int castleY, int enemyCastleX, int enemyCastleY, City city, List<Hero> heroes, Hero currentHero) {
         for (int i = 0; i < mapHeight; i++) {
             for (int j = 0; j < mapWidth; j++) {
@@ -28,21 +34,34 @@ public class MapView {
                 }
 
                 if (!heroDisplayed) {
-                    if (i == aiHeroX && j == aiHeroY) {
-                        System.out.print("A "); // Отображаем AI-героя
-                    } else if (i == city.getX() && j == city.getY()) {
-                        System.out.print("C "); // Отображаем город
-                    } else if (i == castleX && j == castleY) {
-                        System.out.print("C "); // Отображаем замок
-                    } else if (i == enemyCastleX && j == enemyCastleY) {
-                        System.out.print("E "); // Отображаем вражеский замок
-                    } else if (!mapData[i][j].equals(".")) {
-                        System.out.print(mapData[i][j] + " "); // Отображаем ресурсы
-                    } else {
-                        if (terrain[i][j] == TerrainType.GRASS) {
-                            System.out.print(". "); // Отображаем траву
+                    Building building = null;
+                    if (gameMap != null) {
+                        building = gameMap.getBuilding(j, i);
+                    }
+                    if (building != null) {
+                        if (building instanceof WitcherSchool) {
+                            System.out.print("W ");
                         } else {
-                            System.out.print("~ "); // Отображаем воду
+                            System.out.print("B ");
+                        }
+                    } else {
+                        if (i == aiHeroY && j == aiHeroX) {
+                            System.out.print("A "); // Отображаем AI-героя
+                        } else if (i == city.getY() && j == city.getX()) {
+                            System.out.print("C "); // Отображаем город
+                        } else if (i == castleY && j == castleX) {
+                            System.out.print("C "); // Отображаем замок
+                        } else if (i == enemyCastleY && j == enemyCastleX) {
+                            System.out.print("E "); // Отображаем вражеский замок
+                        } else if (mapData[i][j] != null && !mapData[i][j].equals(".")) {
+                            System.out.print(mapData[i][j] + " "); // Отображаем ресурсы
+                        } else {
+                            // Отображаем TerrainType
+                            if (terrain[i][j] == TerrainType.GRASS) {
+                                System.out.print(". "); // Отображаем траву
+                            } else {
+                                System.out.print("~ "); // Отображаем воду
+                            }
                         }
                     }
                 }
@@ -50,5 +69,4 @@ public class MapView {
             System.out.println();
         }
     }
-
 }
