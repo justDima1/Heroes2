@@ -1,6 +1,8 @@
 package model.map;
 
 import controller.GameController;
+import model.buildings.Building;
+import model.buildings.WitcherSchool;
 import model.heroes.Hero;
 import org.junit.jupiter.api.Test;
 import java.util.Random;
@@ -16,18 +18,23 @@ public class GameMap {
     private int enemyCastleX;
     private int enemyCastleY;
     private Random random = new Random();
+    private Building[][] buildings;
+    private GameMap gameMap;
+    private WitcherSchool witcherSchool;
+
     public GameMap(int width, int height) {
         this.width = width;
         this.height = height;
         this.terrain = new TerrainType[width][height];
         this.map = new String[width][height];
+        this.buildings = new Building[width][height];
+
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
                 terrain[i][j] = random.nextDouble() < 0.6? TerrainType.GRASS : TerrainType.SWAMP;
                 map[i][j] = ".";
             }
         }
-
         castleX = 0;
         castleY = 0;
         enemyCastleX = width - 1;
@@ -36,7 +43,15 @@ public class GameMap {
         placeResources();
         placeObstacles();
         placeFixedMine();
+        placeWitcherSchool();//<---Тут
         createDiagonalPath();
+    }
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
     }
     @Override
     public String toString() {
@@ -73,7 +88,7 @@ public class GameMap {
         } else if (map[x][y].equals("Z")) {
             return 5;
         }
-        return 0; // Ничего не собрали
+        return 0;
     }
 
     private void createDiagonalPath() {
@@ -81,7 +96,6 @@ public class GameMap {
             map[i][i] = "+";
         }
     }
-
     private void placeResources() {
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
@@ -98,8 +112,6 @@ public class GameMap {
     private void placeObstacles() {
         int trees = 3;
         int stones = 2;
-
-        // Размещаем деревья
         while (trees > 0) {
             int x = random.nextInt(width);
             int y = random.nextInt(height);
@@ -108,8 +120,6 @@ public class GameMap {
                 trees--;
             }
         }
-
-        // Размещаем камни
         while (stones > 0) {
             int x = random.nextInt(width);
             int y = random.nextInt(height);
@@ -121,15 +131,27 @@ public class GameMap {
     }
 
     private void placeFixedMine() {
-        // Размещаем шахту в фиксированном положении (третья клетка сверху, третья справа)
         int mineX = 2;
         int mineY = width - 3;
-
-        // Проверяем, что шахта не выходит за границы карты
         if (mineX >= 0 && mineX < height && mineY >= 0 && mineY < width) {
             map[mineX][mineY] = "Z"; // Шахта
         }
+    } public void placeWitcherSchool() {
+        int x = 5;
+        int y = 5;
+        if (x >= 0 && x < width && y >= 0 && y < height) {
+            if(witcherSchool == null){
+                witcherSchool = new WitcherSchool(x, y);
+            }
+
+            buildings[x][y] = witcherSchool;
+            map[x][y] = "W";
+            System.out.println("Школа Ведьмаков размещена на координатах (" + x + ", " + y + ")");
+        } else {
+            System.out.println("Не удалось разместить Школу Ведьмаков");
+        }
     }
+
     public String checkResources(int x, int y) {
         if (map[x][y].equals("G")) {
             return "G";
@@ -141,7 +163,6 @@ public class GameMap {
     public TerrainType[][] getTerrain() {
         return terrain;
     }
-
     public String[][] getMap() {
         return map;
     }
@@ -196,5 +217,13 @@ public class GameMap {
     }
 
     public void setTerrain(TerrainType[][] terrain) {
+    }
+
+    public Building getBuilding(int x, int y) {
+        return buildings[x][y];
+    }
+
+    public void setBuilding(Building building, int x, int y) {
+        buildings[x][y] = building;
     }
 }

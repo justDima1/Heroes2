@@ -23,6 +23,8 @@ import java.util.Random;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.*;
+import view.WitcherSchoolInterface;
+import model.buildings.WitcherSchool;
 
 public class GameController {
     private City playerCity;
@@ -55,6 +57,7 @@ public class GameController {
     private Leaderboard leaderboard = new Leaderboard();
     private String currentPlayerName = "Игрок";
     private Hero initialHero;
+    private WitcherSchoolInterface witcherSchoolInterface;
 
     public GameController() {
         scanner = new Scanner(System.in);
@@ -84,8 +87,10 @@ public class GameController {
         for (int i = 0; i < 3; i++) {
             aiHero.getArmy().addUnit(new Swordsman());
         }
-        mapView = new MapView();
         gameMap = new GameMap(mapWidth, mapHeight);
+        mapView = new MapView(gameMap);
+        witcherSchoolInterface = new WitcherSchoolInterface();
+        //gameMap.placeWitcherSchool();
         currentPlayer = 1;
         playerCity = new City("Орешек", 0, 0);
     }
@@ -98,7 +103,7 @@ public class GameController {
         battleController = new BattleController();
         cityView = new CityView(scanner);
         currentPlayerName = "TestPlayer";
-        mapView = new MapView();
+        mapView = new MapView(gameMap);
         gameMap = new GameMap(mapWidth, mapHeight);
         currentPlayer = 1;
         playerCity = new City("Орешек", 0, 0);
@@ -327,68 +332,7 @@ public class GameController {
                 return TerrainType.GRASS; // По умолчанию - трава
         }
     }
-    public void displayMap(int heroX, int heroY, int aiHeroX, int aiHeroY, int mapWidth, int mapHeight, TerrainType[][] terrain, String[][] mapData, int castleX, int castleY, int enemyCastleX, int enemyCastleY, City city, List<Hero> heroes, Hero currentHero) {
-        for (int y = 0; y < mapHeight; y++) {
-            for (int x = 0; x < mapWidth; x++) {
-                boolean heroDisplayed = false;
 
-                // Проверяем, есть ли герой в текущей клетке
-                for (Hero hero : heroes) {
-                    if (y == hero.getX() && x == hero.getY()) {
-                        // Определяем, какой символ использовать для текущего героя
-                        if (hero == currentHero) {
-                            System.out.print("H "); // Текущий герой
-                        } else {
-                            System.out.print("h "); // Остальные герои
-                        }
-                        heroDisplayed = true;
-                        break; // Прерываем цикл, так как герой уже отображен
-                    }
-                }
-
-                if (!heroDisplayed) {
-                    if (y == aiHeroX && x == aiHeroY) {
-                        System.out.print("A "); // Отображаем AI-героя
-                    } else if (y == city.getX() && x == city.getY()) {
-                        System.out.print("C "); // Отображаем город
-                    } else if (y == castleX && x == castleY) {
-                        System.out.print("C "); // Отображаем замок
-                    } else if (y == enemyCastleX && x == enemyCastleY) {
-                        System.out.print("E "); // Отображаем вражеский замок
-                    } else {
-                        // Отображаем TerrainType
-                        switch (terrain[y][x]) {
-                            case GRASS:
-                                System.out.print(". ");
-                                break;
-                            case TREE:
-                                System.out.print("T ");
-                                break;
-                            case GOLD:
-                                System.out.print("G ");
-                                break;
-                            case GEMS:
-                                System.out.print("Z ");
-                                break;
-                            case ROAD:
-                                System.out.print("+ ");
-                                break;
-                            case SWAMP:
-                                System.out.print("~ ");
-                                break;
-                            case STONE:
-                                System.out.print("X ");
-                                break;
-                            default:
-                                System.out.print(". "); // По умолчанию - вода
-                                break;
-                        }
-                    }
-                }
-            }
-            System.out.println();
-        }
-    }
     private void initializePlayers() {
         players = new ArrayList<>();
         Player player1 = new Player("Player1", null, 0);
@@ -579,7 +523,7 @@ public class GameController {
                 }
             }
             //aiController = new AIController(mapWidth, mapHeight, this, players.get(1), gameMap);
-            mapView = new MapView();
+            mapView = new MapView(gameMap);
 
         } else {
             System.out.println("Ошибка при загрузке игры!");
@@ -1211,6 +1155,10 @@ public class GameController {
                     currentHero.setX(newX);
                     currentHero.setY(newY);
                     System.out.println("Передвинулся на  (" + newX + ", " + newY + ")");
+                    Building building = gameMap.getBuilding(newX, newY);
+                    if (building instanceof WitcherSchool) {
+                        witcherSchoolInterface.open(currentHero); // Открываем интерфейс Школы Ведьмаков
+                    }
                     return true;
                 } else {
                     System.out.println("Стой! Убьешься.");
@@ -1229,7 +1177,7 @@ public class GameController {
     public void startPlayerTurn() {
         Hero currentHero = players.get(0).getCurrentHero();
         currentHero.setMovesLeft(5);
-        addUnitsToArmy();
+        //addUnitsToArmy();
     }
     private void endPlayerTurn() {
         Hero currentHero = players.get(0).getCurrentHero();
@@ -1332,5 +1280,5 @@ public class GameController {
         MapEditor mapEditor = new MapEditor(mapWidth, mapHeight);
         mapEditor.startEditor();
     }
-
+    
 }
