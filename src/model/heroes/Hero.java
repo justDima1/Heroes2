@@ -6,6 +6,9 @@ import model.units.Pikeman;
 import model.units.Swordsman;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Hero {
     private int x;
     private int y;
@@ -13,13 +16,15 @@ public class Hero {
     private String name;
     private int stableBonusTurnsLeft;
     private int movesLeft = 5;
-    private int health = 100; // Добавляем поле health
-
+    private int health = 100;
+    private List<String> learnedSpells = new ArrayList<>();
     public Hero(int x, int y, String name) {
         this.x = x;
         this.y = y;
         this.army = new Army();
         this.name = name;
+        this.learnedSpells = new ArrayList<>();
+
         for (int i = 0; i < 10; i++) {
             army.addUnit(new Archer());
         }
@@ -79,5 +84,12 @@ public class Hero {
     }
     public void setHealth(int health) {
         this.health = health;
+    }
+    public List<String> getLearnedSpells() { // Геттер
+        return learnedSpells;
+    }
+
+    public void setLearnedSpells(List<String> learnedSpells) { // Сеттер
+        this.learnedSpells = learnedSpells;
     }
 }

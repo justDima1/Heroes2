@@ -57,6 +57,7 @@ public class GameController {
     private Leaderboard leaderboard = new Leaderboard();
     private String currentPlayerName = "Игрок";
     private Hero initialHero;
+    private WitcherSchool school;
     private WitcherSchoolInterface witcherSchoolInterface;
 
     public GameController() {
@@ -89,8 +90,8 @@ public class GameController {
         }
         gameMap = new GameMap(mapWidth, mapHeight);
         mapView = new MapView(gameMap);
-        witcherSchoolInterface = new WitcherSchoolInterface();
-        //gameMap.placeWitcherSchool();
+        school = new WitcherSchool(5, 5);
+        witcherSchoolInterface = new WitcherSchoolInterface(school, scanner);
         currentPlayer = 1;
         playerCity = new City("Орешек", 0, 0);
     }
@@ -856,6 +857,7 @@ public class GameController {
                     } else if (tile.equals("Z")) {
                         players.get(1).getGems().setAmount(players.get(1).getGems().getAmount() + 5);
                     }
+
                     currentHero.setX(newX);
                     currentHero.setY(newY);
                     System.out.println("ИИ передвинулся   (" + newX + ", " + newY + ")");
@@ -1157,7 +1159,7 @@ public class GameController {
                     System.out.println("Передвинулся на  (" + newX + ", " + newY + ")");
                     Building building = gameMap.getBuilding(newX, newY);
                     if (building instanceof WitcherSchool) {
-                        witcherSchoolInterface.open(currentHero); // Открываем интерфейс Школы Ведьмаков
+                        witcherSchoolInterface.open(currentHero);
                     }
                     return true;
                 } else {

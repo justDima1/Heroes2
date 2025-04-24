@@ -1,6 +1,7 @@
 package controller;
 
 import model.heroes.Hero;
+import model.spells.*;
 import model.units.Archer;
 import model.units.Pikeman;
 import model.units.Swordsman;
@@ -9,7 +10,7 @@ import model.units.Cavalrist;
 import model.units.Paladin;
 import model.units.Unit;
 import model.units.Army;
-
+import model.units.AngelClone;
 import java.util.*;
 
 public class BattleController {
@@ -51,33 +52,50 @@ public class BattleController {
             System.out.println(hero1.getName() + " победил!");
         }
     }
-
     private void playerTurn(Hero attackerHero, Hero defenderHero) {
+        applyEndOfTurnEffects(attackerHero); // <--- Применяем эффекты
+
         Army attackerArmy = attackerHero.getArmy();
         Army defenderArmy = defenderHero.getArmy();
 
         System.out.println("\n--- Ход " + attackerHero.getName() + " ---");
         displayArmies(attackerHero, defenderHero);
 
-        //  Выбор атакующего отряда
-        List<String> attackerUnits = getSquads(attackerArmy);
-        String attackerUnit = chooseAttacker(attackerUnits);
-        if (attackerUnit == null) {
-            return;
+        action(attackerHero, defenderHero); // <--- Вызываем action()
+    }
+
+    private void action(Hero attackerHero, Hero defenderHero) {
+        System.out.println("Выберите действие:");
+        System.out.println("1. Атаковать");
+        System.out.println("2. Использовать заклинание");
+
+        int choice = -1;
+        while (choice != 1 && choice != 2) {
+            System.out.print("Введите номер действия: ");
+            try {
+                choice = Integer.parseInt(scanner.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.println("Неверный ввод. Пожалуйста, введите число.");
+            }
         }
 
-        //  Выбор цели
-        List<String> defenderUnits = getSquads(defenderArmy);
-        String defenderUnit = chooseTarget(defenderUnits);
-        if (defenderUnit == null) {
-            return;
+        if (choice == 1) {
+            // Логика атаки
+            attackAction(attackerHero, defenderHero);
+        } else if (choice == 2) {
+            // Логика использования заклинания
+            if (attackerHero.getLearnedSpells().isEmpty()) { // Проверяем наличие изученных заклинаний
+                System.out.println("У вас нет изученных заклинаний. Выберите другое действие.");
+                action(attackerHero, defenderHero); // Возвращаемся к выбору действия
+            } else {
+                castSpellAction(attackerHero, defenderHero, defenderHero.getArmy()); // Передаем армию защищающегося
+            }
         }
-
-        //  Атака
-        attack(attackerUnit, defenderUnit, attackerArmy, defenderArmy);
     }
 
     private void aiTurn(Hero attackerHero, Hero defenderHero) {
+        applyEndOfTurnEffects(attackerHero); // <--- Применяем эффекты
+
         Army attackerArmy = attackerHero.getArmy();
         Army defenderArmy = defenderHero.getArmy();
 
@@ -141,7 +159,6 @@ public class BattleController {
             try {
                 choice = Integer.parseInt(scanner.nextLine());
             } catch (NumberFormatException e) {
-                System.out.println("Некорректный ввод. Пожалуйста, введите число.");
             }
         }
 
@@ -150,42 +167,36 @@ public class BattleController {
 
     public void attack(String attackerUnitType, String defenderUnitType, Army attackerArmy, Army defenderArmy) {
         System.out.println(attackerUnitType + " атакует " + defenderUnitType + "!");
-
-        // Получаем отряд атакующих
         List<Unit> attackerSquad = new ArrayList<>();
         for (Unit unit : attackerArmy.getUnits()) {
             if (Objects.equals(unit.getClass().getSimpleName(), attackerUnitType)) {
                 attackerSquad.add(unit);
             }
         }
-
-        // Получаем отряд защищающихся
         List<Unit> defenderSquad = new ArrayList<>();
         for (Unit unit : defenderArmy.getUnits()) {
             if (Objects.equals(unit.getClass().getSimpleName(), defenderUnitType)) {
                 defenderSquad.add(unit);
             }
         }
-
         if (attackerSquad.isEmpty() || defenderSquad.isEmpty()) {
             System.out.println("Нет юнитов для атаки или защиты!");
             return;
         }
-
-        // Определяем базовый урон и здоровье юнита
         int baseDamage = attackerSquad.get(0).getAttack();
         int defenderHealth = defenderSquad.get(0).getHealth();
 
-        // Суммарный урон отряда
-        int totalDamage = baseDamage * attackerSquad.size();
+        // <--- Добавляем проверку на ноль
+        if (defenderHealth == 0) {
+            defenderHealth = 1; // Чтобы избежать деления на ноль
+        }
 
-        // Количество убитых юнитов
+        int totalDamage = baseDamage * attackerSquad.size();
         int killedUnits = Math.min(totalDamage / defenderHealth, defenderSquad.size());
         System.out.println(totalDamage);
         System.out.println(defenderHealth);
-        // Удаляем убитых юнитов
         int unitsRemoved = 0;
-        List<Unit> unitsToRemove = new ArrayList<>(); // Список на удаление
+        List<Unit> unitsToRemove = new ArrayList<>();
         for (int i = 0; i < defenderArmy.getUnits().size(); i++) {
             if (unitsRemoved >= killedUnits) break;
             if (Objects.equals(defenderArmy.getUnits().get(i).getClass().getSimpleName(), defenderUnitType)) {
@@ -193,18 +204,14 @@ public class BattleController {
                 unitsRemoved++;
             }
         }
-
-        // Удаляем юниты из списка
         for (Unit unitToRemove : unitsToRemove) {
-            defenderArmy.removeUnit(unitToRemove);
+            defenderArmy.getUnits().remove(unitToRemove);
         }
-
         if (killedUnits > 0) {
             System.out.println("Убито " + killedUnits + " юнитов.");
         } else {
             System.out.println("Никто не погиб");
         }
-
         System.out.println("Сражение завершено.");
     }
     private void displayArmies(Hero hero1, Hero hero2) {
@@ -239,6 +246,198 @@ public class BattleController {
             squads.add(entry.getKey());
         }
         return squads;
+    }
+    private void attackAction(Hero attackerHero, Hero defenderHero) {
+        Army attackerArmy = attackerHero.getArmy();
+        Army defenderArmy = defenderHero.getArmy();
+
+        //  Выбор атакующего отряда
+        List<String> attackerUnits = getSquads(attackerArmy);
+        String attackerUnit = chooseAttacker(attackerUnits);
+        if (attackerUnit == null) {
+            return;
+        }
+
+        //  Выбор цели
+        List<String> defenderUnits = getSquads(defenderArmy);
+        String defenderUnit = chooseTarget(defenderUnits);
+        if (defenderUnit == null) {
+            return;
+        }
+
+        //  Атака
+        attack(attackerUnit, defenderUnit, attackerArmy, defenderArmy);
+    }
+    private void castSpellAction(Hero attackerHero, Hero defenderHero, Army defenderArmy) {
+        System.out.println("Выберите заклинание для использования:");
+        List<String> learnedSpells = attackerHero.getLearnedSpells();
+        if (learnedSpells.isEmpty()) {
+            System.out.println("У вас нет изученных заклинаний.");
+            return;
+        }
+
+        for (int i = 0; i < learnedSpells.size(); i++) {
+            System.out.println((i + 1) + ". " + learnedSpells.get(i));
+        }
+
+        int choice = -1;
+        while (choice < 1 || choice > learnedSpells.size()) {
+            System.out.print("Введите номер заклинания: ");
+            try {
+                choice = Integer.parseInt(scanner.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.println("Неверный ввод. Пожалуйста, введите число.");
+            }
+        }
+
+        String spellName = learnedSpells.get(choice - 1);
+
+        Spell spell = createSpellInstance(spellName);
+
+        if (spell == null) {
+            System.out.println("Не удалось создать экземпляр заклинания: " + spellName);
+            return;
+        }
+
+        Army targetArmy;
+        if (spellName.equals("Fireball")) {
+            targetArmy = defenderHero.getArmy();
+        } else {
+            targetArmy = attackerHero.getArmy();
+        }
+
+        String targetUnitType = chooseTargetForSpell(targetArmy, spellName);
+
+        if (targetUnitType == null) {
+            System.out.println("Не выбрана цель для заклинания.");
+            return;
+        }
+
+        applySpellToUnits(spell, targetArmy, targetUnitType);
+        System.out.println("Вы использовали заклинание: " + spellName + " на " + targetUnitType);
+
+        // Удаляем убитых юнитов после применения Fireball
+        if (spellName.equals("Fireball")) {
+            removeDeadUnits(targetArmy, targetUnitType);
+        }
+    }
+
+    private void applySpellToUnits(Spell spell, Army army, String targetUnitType) {
+        List<Unit> unitsToAdd = new ArrayList<>(); // Список юнитов для добавления после итерации
+
+        Iterator<Unit> iterator = army.getUnits().iterator();
+        while (iterator.hasNext()) {
+            Unit unit = iterator.next();
+            if (unit.getClass().getSimpleName().equals(targetUnitType)) {
+                if (spell instanceof Clone) {  // Отдельная логика для клонирования
+                    if (unit instanceof Angel) {
+
+                        // Создаем клона и добавляем его в список для добавления
+                        AngelClone clone = new AngelClone();
+                        unitsToAdd.add(clone);
+                        System.out.println("Юнит AngelClone добавлен!");
+                    } else {
+                        System.out.println("Заклинание Clone можно применять только к Ангелам.");
+                    }
+                } else {
+                    spell.apply(unit); // Применяем остальные заклинания
+                }
+            }
+        }
+
+        // Добавляем клонированных юнитов в армию после итерации
+        for (Unit unitToAdd : unitsToAdd) {
+            unitToAdd.setArmy(army); // Устанавливаем армию клону
+            army.getUnits().add(unitToAdd);
+        }
+    }
+
+    private void removeDeadUnits(Army army, String targetUnitType) {
+        Iterator<Unit> iterator = army.getUnits().iterator();
+        while (iterator.hasNext()) {
+            Unit unit = iterator.next();
+            if (unit.getClass().getSimpleName().equals(targetUnitType) && unit.getHealth() <= 0) {
+                iterator.remove();
+                System.out.println("Юнит " + unit.getClass().getSimpleName() + " убит заклинанием.");
+            }
+        }
+    }
+
+    private String chooseTargetForSpell(Army army, String spellName) {
+        System.out.println("Выберите цель для заклинания:");
+        List<String> availableUnits = getSquads(army); // Получаем все доступные типы юнитов
+
+        // Если заклинание Clone, то предлагаем только Ангелов
+        List<String> defenderUnits = new ArrayList<>();
+        if (spellName.equals("Clone")) {
+            for (String unitType : availableUnits) {
+                if (unitType.equals("Angel")) {
+                    defenderUnits.add(unitType);
+                }
+            }
+            if (defenderUnits.isEmpty()) {
+                System.out.println("В армии нет Ангелов, которых можно клонировать.");
+                return null; // Нет Ангелов для клонирования
+            }
+        } else {
+            defenderUnits = availableUnits; // Для остальных заклинаний - все типы юнитов
+        }
+
+        // Выводим доступные типы юнитов на экран
+        for (int i = 0; i < defenderUnits.size(); i++) {
+            System.out.println((i + 1) + ". " + defenderUnits.get(i));
+        }
+
+        // Запрашиваем ввод пользователя
+        int choice = -1;
+        while (choice < 1 || choice > defenderUnits.size()) {
+            System.out.print("Введите номер цели: ");
+            try {
+                choice = Integer.parseInt(scanner.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.println("Неверный ввод. Пожалуйста, введите число.");
+            }
+        }
+        return defenderUnits.get(choice - 1);
+    }
+
+    private Spell createSpellInstance(String spellName) {
+        switch (spellName) {
+            case "Fireball":
+                return new Fireball();
+            case "Blessing":
+                return new Blessing();
+            case "HealthBoost":
+                return new HealthBoost();
+            case "Clone":
+                return new Clone();
+            default:
+                System.out.println("Неизвестное заклинание: " + spellName);
+                return null;
+        }
+    }
+
+    private void applyEndOfTurnEffects(Hero hero) {
+        Army army = hero.getArmy();
+        for (Unit unit : army.getUnits()) {
+            if (unit.getDuration() > 0) {
+                unit.setDuration(unit.getDuration() - 1);
+                if (unit.getDuration() == 0) {
+                    if (unit.getAttack() > 5) {
+                        unit.setAttack(unit.getAttack() - 10);
+                        System.out.println("Действие Blessing на " + unit.getClass().getSimpleName() + " закончилось.");
+                    }
+                    if (unit.getHealthBoost() > 0) {
+                        unit.setHealthBoost(0);
+                        System.out.println("Действие HealthBoost на " + unit.getClass().getSimpleName() + " закончилось.");
+                    }
+
+                    int currentHealth = unit.getHealth();
+                    unit.setHealth(currentHealth - 50);
+                    System.out.println("Действие HealthBoost на " + unit.getClass().getSimpleName() + " закончилось, здоровье возвращено к прежнему значению.");
+                }
+            }
+        }
     }
 
 }

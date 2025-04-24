@@ -4,8 +4,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Army implements Serializable { // Добавлено implements Serializable
-    private static final long serialVersionUID = 1L; // Добавлено serialVersionUID
+public class Army implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final List<Unit> units;
 
     public Army() {
