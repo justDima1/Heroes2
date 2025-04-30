@@ -12,6 +12,7 @@ public class Unit implements Serializable {
     private Army army;
     private int healthBoost = 0;
     private int duration = 0;
+    private int experience;
 
     public Unit(int attack, int defense, int health, int cost) {
         this.attack = attack;
@@ -90,5 +91,17 @@ public class Unit implements Serializable {
 
     public void setName(String name) {
         this.name = name;
+    }
+    public void loseExperience(double percentage) {
+        experience -= (int) (experience * percentage);
+        if (experience < 0) {
+            experience = 0; // Опыт не может быть отрицательным
+        }
+    }
+    public void loseHealth(double percentage) {
+        health -= (int) (health * percentage);
+        if (health < 0) {
+            health = 0; // Здоровье не может быть отрицательным
+        }
     }
 }

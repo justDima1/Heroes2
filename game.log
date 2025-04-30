@@ -1,0 +1,14 @@
+[2025-04-29 00:28:57] Игрок Player закончил свой ход.
+[2025-04-29 00:33:45] У героя Саня закончились очки перемещения.
+апр. 29, 2025 12:59:59 AM controller.GameController processInput
+INFO: Игрок Player закончил свой ход.
+апр. 30, 2025 8:53:41 PM controller.GameController processInput
+INFO: Игрок Player закончил свой ход.
+апр. 30, 2025 8:53:45 PM controller.GameController processInput
+INFO: Игрок Player закончил свой ход.
+апр. 30, 2025 8:53:53 PM controller.GameController processInput
+INFO: Игрок Player закончил свой ход.
+мая 01, 2025 2:07:51 AM controller.GameController processInput
+INFO: Игрок Player закончил свой суперский  ход.
+мая 01, 2025 2:26:28 AM controller.GameController handleHeroInCity
+INFO: Герой в городе.

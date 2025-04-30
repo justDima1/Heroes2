@@ -28,8 +28,11 @@ public class SaveData implements Serializable {
     private boolean CathedralBuilt;
     private boolean GatesBuilt;
     private boolean GuardPostBuilt;
+    private List<Unit> units;
+    private int gold;
+    private boolean wonMiniBattle;
 
-    public SaveData(String mapData, HeroData hero1Data, HeroData hero2Data, int currentTurn, int player1Gold, int player2Gold, String currentMapName, int mapWidth, int mapHeight, List<UnitData> player1Units, List<UnitData> player2Units, int player1Gems, int player2Gems, int townHallLevel, boolean crossbowTowerBuilt, boolean arenaBuilt, boolean armoryBuilt, boolean cathedralBuilt, boolean gatesBuilt, boolean guardPostBuilt) {
+    public SaveData(String mapData, HeroData hero1Data, HeroData hero2Data, int currentTurn, int player1Gold, int player2Gold, String currentMapName, int mapWidth, int mapHeight, List<UnitData> player1Units, List<UnitData> player2Units, int player1Gems, int player2Gems, int townHallLevel, boolean crossbowTowerBuilt, boolean arenaBuilt, boolean armoryBuilt, boolean cathedralBuilt, boolean gatesBuilt, boolean guardPostBuilt, List<Unit> units, int gold) {
         this.mapData = mapData;
         this.hero1Data = hero1Data;
         this.hero2Data = hero2Data;
@@ -50,6 +53,9 @@ public class SaveData implements Serializable {
         CathedralBuilt = cathedralBuilt;
         GatesBuilt = gatesBuilt;
         GuardPostBuilt = guardPostBuilt;
+        this.units = units;
+        this.gold = gold;
+        this.wonMiniBattle = false;
     }
 
     public int getMapWidth() {
@@ -189,4 +195,16 @@ public class SaveData implements Serializable {
     public void setGuardPostBuilt(boolean GuardPostBuilt) {
         this.GuardPostBuilt = GuardPostBuilt;
     }
+    public List<Unit> getUnits() {
+        return units;
+    }
+
+    public int getGold() {
+        return gold;
+    }
+
+    public boolean getWonMiniBattle() { return wonMiniBattle; }
+
+    public void setWonMiniBattle(boolean wonMiniBattle) {this.wonMiniBattle = wonMiniBattle;}
+    // Геттеры и сеттеры для других данных
 }

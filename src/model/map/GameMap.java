@@ -7,6 +7,7 @@ import model.heroes.Hero;
 import org.junit.jupiter.api.Test;
 import java.util.Random;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import model.buildings.Hotel;
 
 public class GameMap {
     private TerrainType[][] terrain;
@@ -21,6 +22,7 @@ public class GameMap {
     private Building[][] buildings;
     private GameMap gameMap;
     private WitcherSchool witcherSchool;
+    private Hotel hotel;
 
     public GameMap(int width, int height) {
         this.width = width;
@@ -28,6 +30,8 @@ public class GameMap {
         this.terrain = new TerrainType[width][height];
         this.map = new String[width][height];
         this.buildings = new Building[width][height];
+        this.hotel = new Hotel(2, 6);
+        placeHotel();
 
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
@@ -225,5 +229,18 @@ public class GameMap {
 
     public void setBuilding(Building building, int x, int y) {
         buildings[x][y] = building;
+    }
+    public Hotel getHotel() {
+        return hotel;
+    }
+    private void placeHotel() {
+        int x = 6;
+        int y = 2;
+        if (x >= 0 && x < width && y >= 0 && y < height) {
+            map[x][y] = "O";
+            System.out.println("Отель размещен на координатах (" + x + ", " + y + ")");
+        } else {
+            System.out.println("Не удалось разместить Отель");
+        }
     }
 }

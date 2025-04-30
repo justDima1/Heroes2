@@ -7,7 +7,7 @@ public class Blessing extends AbstractSpell {
     private int duration;
 
     public Blessing() {
-        super("Blessing", 4);
+        super("Blessing", 40);
         this.damageBonus = 10;
         this.duration = 3;
     }

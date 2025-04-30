@@ -45,22 +45,28 @@ public class MapView {
                             System.out.print("B ");
                         }
                     } else {
-                        if (i == aiHeroY && j == aiHeroX) {
-                            System.out.print("A "); // Отображаем AI-героя
-                        } else if (i == city.getY() && j == city.getX()) {
-                            System.out.print("C "); // Отображаем город
-                        } else if (i == castleY && j == castleX) {
-                            System.out.print("C "); // Отображаем замок
-                        } else if (i == enemyCastleY && j == enemyCastleX) {
-                            System.out.print("E "); // Отображаем вражеский замок
-                        } else if (mapData[i][j] != null && !mapData[i][j].equals(".")) {
-                            System.out.print(mapData[i][j] + " "); // Отображаем ресурсы
+                        // === ДОБАВЛЯЕМ ПРОВЕРКУ НА ОТЕЛЬ ===
+                        if (gameMap.getHotel() != null && i == gameMap.getHotel().getX() && j == gameMap.getHotel().getY()) {
+                            System.out.print("O "); // Отель (буква O)
                         } else {
-                            // Отображаем TerrainType
-                            if (terrain[i][j] == TerrainType.GRASS) {
-                                System.out.print(". "); // Отображаем траву
+                            // === КОНЕЦ ПРОВЕРКИ НА ОТЕЛЬ ===
+                            if (i == aiHeroY && j == aiHeroX) {
+                                System.out.print("A "); // Отображаем AI-героя
+                            } else if (i == city.getY() && j == city.getX()) {
+                                System.out.print("C "); // Отображаем город
+                            } else if (i == castleY && j == castleX) {
+                                System.out.print("C "); // Отображаем замок
+                            } else if (i == enemyCastleY && j == enemyCastleX) {
+                                System.out.print("E "); // Отображаем вражеский замок
+                            } else if (mapData[i][j] != null && !mapData[i][j].equals(".")) {
+                                System.out.print(mapData[i][j] + " "); // Отображаем ресурсы
                             } else {
-                                System.out.print("~ "); // Отображаем воду
+                                // Отображаем TerrainType
+                                if (terrain[i][j] == TerrainType.GRASS) {
+                                    System.out.print(". "); // Отображаем траву
+                                } else {
+                                    System.out.print("~ ");
+                                }
                             }
                         }
                     }

@@ -10,7 +10,7 @@ public class HealthBoost implements Spell {
 
     public HealthBoost() {
         this.name = "Health Boost";
-        this.trainingTime = 3;
+        this.trainingTime = 15;
         this.healthIncrease = 50;
         this.duration = 3;
     }

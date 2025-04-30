@@ -1,13 +1,21 @@
 package main;
 
 import java.io.*;
-
+import controller.MiniBattle;
+import model.Player;
+import model.units.Unit;
+import java.util.List;
 public class SaveManager {
 
     private static final String SAVE_DIRECTORY = "saves/"; // Папка для сохранений
 
     // Метод для сохранения игры
     public static void saveGame(SaveData data, String playerName, String saveName) {
+        // Создаем объект MiniBattle
+        MiniBattle miniBattle = new MiniBattle(); // Без аргументов
+        boolean won = miniBattle.startBattle();
+        data.setWonMiniBattle(won);
+
         try {
             // Создаем папку для сохранений, если ее нет
             File saveDir = new File(SAVE_DIRECTORY);
@@ -33,8 +41,7 @@ public class SaveManager {
         }
     }
 
-    // Метод для загрузки игры
-    public static SaveData loadGame(String playerName, String saveName) {
+    public static SaveData loadGame(String playerName, String saveName, Player player) {
         SaveData data = null;
         try {
             String fileName = SAVE_DIRECTORY + playerName + "_" + saveName + ".sav";
@@ -48,12 +55,24 @@ public class SaveManager {
             fileIn.close();
             System.out.println("Игра загружена из " + fileName);
 
+            // Обрабатываем результат мини-битвы
+            if (data.getWonMiniBattle()) {
+                System.out.println("Вы победили в мини-битве! Получен бонус золота: 777");
+                player.getGold().addAmount(777); // Используем метод addAmount
+            } else {
+                System.out.println("Вы проиграли в мини-битве! Юниты потеряли 5% здоровья.");
+                for (Unit unit : data.getUnits()) {
+                    unit.loseHealth(0.05); // 5%
+                }
+            }
+
         } catch (IOException | ClassNotFoundException e) {
             System.err.println("Ошибка при загрузке игры: " + e.getMessage());
             e.printStackTrace();
         }
         return data;
     }
+
 
     // Метод для получения списка сохранений игрока
     public static File[] getSaveFiles(String playerName) {

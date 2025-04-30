@@ -7,7 +7,7 @@ import model.units.AngelClone;
 public class Clone extends AbstractSpell {
 
     public Clone() {
-        super("Clone", 7); // Заклинание "Clone" требует 7 секунд обучения
+        super("Clone", 20); // Заклинание "Clone" требует 7 секунд обучения
     }
 
     @Override

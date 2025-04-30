@@ -91,4 +91,17 @@ public class Player {
     public void clearUnits() {
         this.units.clear();
     }
+    public void loseHealthAllUnits(double percentage) {
+        for (Unit unit : units) {
+            unit.loseHealth(percentage);
+        }
+    }
+
+    public void healUnits(double percentage) {
+        for (Unit unit : units) {
+            int health = unit.getHealth();
+            health += (int) (health * percentage);
+            unit.setHealth(health);
+        }
+    }
 }

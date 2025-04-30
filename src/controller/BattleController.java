@@ -352,7 +352,7 @@ public class BattleController {
         }
     }
 
-    private void removeDeadUnits(Army army, String targetUnitType) {
+    public void removeDeadUnits(Army army, String targetUnitType) {
         Iterator<Unit> iterator = army.getUnits().iterator();
         while (iterator.hasNext()) {
             Unit unit = iterator.next();

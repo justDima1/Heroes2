@@ -7,7 +7,7 @@ public class Fireball extends AbstractSpell {
     private int damage = 50; // Урон от Fireball
 
     public Fireball() {
-        super("Fireball", 5);
+        super("Fireball", 10);
     }
 
     @Override

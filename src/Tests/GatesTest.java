@@ -4,7 +4,6 @@ import model.buildings.Gates;
 import model.units.Angel;
 import model.units.Unit;
 import org.junit.jupiter.api.Test;
-
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -42,4 +41,9 @@ public class GatesTest {
 testGetAvailableUnits(): Проверяет, что метод getAvailableUnits() возвращает список доступных
 для найма юнитов, и что в этом списке есть класс Angel.
 testGetRecruitCost(): Проверяет, что метод getRecruitCost() возвращает правильную стоимость найма ангела.
+
+
+доп ко 2
+доп к 3 каждое самостоятельное сохранение запускается игра в миниигру. минисражение трех случайных юнитов. при победе бонус голды при пораженнии -хр у всех юнитов в армии если загрузить это сохранение.
+ доп к 4 отель в который заселяемся только с 18 до 22 часов. может быть заполнен npc и сказать что нет места. дает бонус отдыха в другое время теряем хр см методу.
  */

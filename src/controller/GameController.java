@@ -18,13 +18,27 @@ import model.units.Archer;
 import model.units.Pikeman;
 import model.units.Unit;
 import javax.swing.*;
-import java.io.*;
+import java.io.*;// аналог java.nio.file.*
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Random;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import view.WitcherSchoolInterface;
 import model.buildings.WitcherSchool;
+import model.buildings.Hotel;
+
+import controller.GameLogger;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.io.IOException;
+import java.util.logging.FileHandler;
+import java.util.logging.SimpleFormatter;
+
 
 public class GameController {
     private City playerCity;
@@ -59,6 +73,14 @@ public class GameController {
     private Hero initialHero;
     private WitcherSchool school;
     private WitcherSchoolInterface witcherSchoolInterface;
+    private static final String MAPS_DIRECTORY = "";
+    private int currentMove = 1;
+    private int movesThisTurn = 0;
+    private final List<NPC> npcs = new ArrayList<>();
+    private final ExecutorService npcExecutor = Executors.newFixedThreadPool(5);
+
+    static final Logger logger = Logger.getLogger(GameController.class.getName());
+    private static final String LOG_FILE = "game.log";
 
     public GameController() {
         scanner = new Scanner(System.in);
@@ -87,6 +109,15 @@ public class GameController {
         }
         for (int i = 0; i < 3; i++) {
             aiHero.getArmy().addUnit(new Swordsman());
+        }
+        try {
+            FileHandler fh = new FileHandler(LOG_FILE, true);
+            SimpleFormatter formatter = new SimpleFormatter();
+            fh.setFormatter(formatter);
+            logger.addHandler(fh);
+            logger.setLevel(Level.ALL);
+        } catch (IOException e) {
+            System.err.println("Ошибка при создании логгера: " + e.getMessage());
         }
         gameMap = new GameMap(mapWidth, mapHeight);
         mapView = new MapView(gameMap);
@@ -174,109 +205,185 @@ public class GameController {
         System.out.println("2 - Редактор карт");
         System.out.println("3 - Загрузить карту");
         System.out.println("4 - Таблица лидеров");
-        int choice = scanner.nextInt();
-        scanner.nextLine();
 
-        // Объявляем переменные перед switch
-        Hero initialHero = new Hero(1, 1, "Саня");
-        Hero aiHero = new Hero(8, 8, "СаняИИ");
-        Player player1 = new Player("Player", initialHero, 1000);
-        Player player2 = new Player("AI", aiHero, 1000);
+        try {
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
 
-        switch (choice) {
-            case 1:
+            // Объявляем переменные перед switch
+            Hero initialHero = new Hero(1, 1, "Саня");
+            Hero aiHero = new Hero(8, 8, "СаняИИ");
+            Player player1 = new Player("Player", initialHero, 1000);
+            Player player2 = new Player("AI", aiHero, 1000);
 
-                mapWidth = 10;
-                mapHeight = 10;
-                gameMap = new GameMap(mapWidth, mapHeight);
-                players = new ArrayList<>();
-                player1.setCurrentHero(initialHero);
-                players.add(player1);
-                player2.setCity(new City("ИИ Сити", 8, 8));
-                player2.setCurrentHero(aiHero);
-                players.add(player2);
+            switch (choice) {
+                case 1:
+                    mapWidth = 10;
+                    mapHeight = 10;
+                    gameMap = new GameMap(mapWidth, mapHeight);
+                    players = new ArrayList<>();
+                    player1.setCurrentHero(initialHero);
+                    players.add(player1);
+                    player2.setCity(new City("ИИ Сити", 8, 8));
+                    player2.setCurrentHero(aiHero);
+                    players.add(player2);
 
-                players.get(0).setCurrentHero(initialHero);
-                players.get(1).setCurrentHero(aiHero);
+                    players.get(0).setCurrentHero(initialHero);
+                    players.get(1).setCurrentHero(aiHero);
 
-                aihero = aiHero; // Инициализируем aihero!
-                aiController = new AIController(mapWidth, mapHeight, this, players.get(1), gameMap);
-                break;
-            case 2:
-                MapEditor mapEditor = new MapEditor(10, 10);
-                mapEditor.startEditor();
-                startGame();
-                return;
-            case 3:
-                System.out.println("Введите имя файла карты для загрузки:");
-                String filename = scanner.nextLine();
-                loadMapFromFile(filename);
-                mapWidth = 10;
-                mapHeight = 10;
-                players = new ArrayList<>();
-
-                // Создаем первого героя и даем ему имя "Саня"
-
-                player1.setCurrentHero(initialHero);
-                players.add(player1);
-
-                // Создаем второго героя (AI) и даем ему имя "СаняИИ"
-
-                player2.setCity(new City("ИИ Сити", 8, 8));
-                player2.setCurrentHero(aiHero);
-                players.add(player2);
-
-                players.get(0).setCurrentHero(initialHero);
-                players.get(1).setCurrentHero(aiHero);
-
-                aihero = aiHero; // Инициализируем aihero!
-                aiController = new AIController(mapWidth, mapHeight, this, players.get(1), gameMap);
-                break;
-            case 4:
-                displayLeaderboard();
-                startGame();
-            default:
-                System.out.println("Некорректный выбор.");
-                return;
-        }
-        // Ищем город на карте и устанавливаем его координаты
-        String[][] map = gameMap.getMap();
-        for (int i = 0; i < mapWidth; i++) {
-            for (int j = 0; j < mapHeight; j++) {
-                if (map[i][j].equals("C") || map[i][j].equals("E")) {
-                    playerCity = new City("Захваченный город",i ,j);
+                    aihero = aiHero; // Инициализируем aihero!
+                    aiController = new AIController(mapWidth, mapHeight, this, players.get(1), gameMap);
                     break;
+                case 2:
+                    MapEditor mapEditor = new MapEditor(10, 10);
+                    mapEditor.startEditor();
+                    startGame();
+                    return;
+                case 3:
+                    loadMapMenu(scanner); // Вызываем метод для загрузки карты
+                    mapWidth = 10;
+                    mapHeight = 10;
+                    players = new ArrayList<>();
+                    player1.setCurrentHero(initialHero);
+                    players.add(player1);
+                    player2.setCity(new City("ИИ Сити", 8, 8));
+                    player2.setCurrentHero(aiHero);
+                    players.add(player2);
+                    players.get(0).setCurrentHero(initialHero);
+                    players.get(1).setCurrentHero(aiHero);
+
+                    aihero = aiHero; // Инициализируем aihero!
+                    aiController = new AIController(mapWidth, mapHeight, this, players.get(1), gameMap);
+                    break;
+                case 4:
+                    displayLeaderboard();
+                    startGame();
+                    return;
+                default:
+                    System.out.println("Некорректный выбор.");
+                    return;
+            }
+
+            // Ищем город на карте и устанавливаем его координаты
+            String[][] map = gameMap.getMap();
+            for (int i = 0; i < mapWidth; i++) {
+                for (int j = 0; j < mapHeight; j++) {
+                    if (map[i][j].equals("C") || map[i][j].equals("E")) {
+                        playerCity = new City("Захваченный город", i, j);
+                        break;
+                    }
+                }
+            }
+            aiController = new AIController(mapWidth, mapHeight, this, players.get(1), gameMap);
+
+            if (playerCity == null) {
+                playerCity = new City("Тверь", 1, 1);
+                TownHall townHall = new TownHall();
+                playerCity.addBuilding(townHall);
+            }
+
+            Gold gold = new Gold(1000);
+            Gems gems = new Gems(10);
+            player1.setGold(gold);
+            player1.setGems(gems);
+
+            startPlayerTurn();
+            runGameLoop();
+
+        } catch (java.util.InputMismatchException e) {
+            System.out.println("Ошибка: Введите число от 1 до 4.");
+            scanner.next(); // Очищаем буфер сканера
+            startGame(); // Вызываем startGame() снова
+        }
+    }
+    private List<String> getMapFiles() {
+        List<String> mapFiles = new ArrayList<>();
+        File currentDir = new File("."); // Текущая директория проекта
+        File[] files = currentDir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile() && file.getName().endsWith(".txt")) {
+                    mapFiles.add(file.getName());
                 }
             }
         }
-        aiController = new AIController(mapWidth, mapHeight, this, players.get(1), gameMap);
-
-        if (playerCity == null) {
-            playerCity = new City("Тверь",1,1);
-            TownHall townHall = new TownHall();
-            playerCity.addBuilding(townHall);
-
+        return mapFiles;
+    }
+    private void loadMapMenu(Scanner scanner) {
+        List<String> mapFiles = getMapFiles();
+        if (mapFiles.isEmpty()) {
+            System.out.println("Нет доступных карт для загрузки.");
+            return;
         }
-        //  this.townHall = new TownHall();
-        Gold gold = new Gold(1000);
-        Gems gems = new Gems(10);
-        player1.setGold(gold);
-        player1.setGems(gems);
 
-        // cityView = new CityView(playerCity);
+        System.out.println("Доступные карты:");
+        for (int i = 0; i < mapFiles.size(); i++) {
+            System.out.println((i + 1) + " - " + mapFiles.get(i));
+        }
+        System.out.println("0 - Назад");
+        System.out.println("-1 - Удалить карту");
+        System.out.println("Выберите номер карты для загрузки или введите 0 для выхода, -1 для удаления:");
 
-        startPlayerTurn();
-        runGameLoop();
+        int choice = scanner.nextInt();
+        scanner.nextLine(); // Consume newline
+
+        if (choice > 0 && choice <= mapFiles.size()) {
+            String filename = mapFiles.get(choice - 1);
+            loadMapFromFile(filename);
+        } else if (choice == 0) {
+            startGame(); // Возвращаемся в главное меню
+            return;
+        } else if (choice == -1) {
+            deleteMapMenu(scanner, mapFiles);
+            return;
+        } else {
+            System.out.println("Некорректный выбор.");
+        }
+    }
+
+    private void deleteMapMenu(Scanner scanner, List<String> mapFiles) {
+        if (mapFiles.isEmpty()) {
+            System.out.println("Нет доступных карт для удаления.");
+            return;
+        }
+
+        System.out.println("Доступные карты для удаления:");
+        for (int i = 0; i < mapFiles.size(); i++) {
+            System.out.println((i + 1) + " - " + mapFiles.get(i));
+        }
+        System.out.println("0 - Назад");
+        System.out.println("Выберите номер карты для удаления или введите 0 для выхода:");
+
+        int deleteIndex = scanner.nextInt();
+        scanner.nextLine(); // Consume newline
+
+        if (deleteIndex > 0 && deleteIndex <= mapFiles.size()) {
+            String filenameToDelete = mapFiles.get(deleteIndex - 1);
+            deleteMapFile(filenameToDelete); // Вызываем метод deleteMapFile
+            // После удаления возвращаемся в меню загрузки карт, чтобы обновить список
+            loadMapMenu(scanner);
+        } else if (deleteIndex == 0) {
+            // Возвращаемся в меню загрузки карт
+            loadMapMenu(scanner);
+        } else {
+            System.out.println("Некорректный выбор.");
+        }
     }
     private void loadMapFromFile(String filename) {
-        try (Scanner fileScanner = new Scanner(new java.io.File(filename + ".txt"))) {
+        String filePath = filename; // Используем имя файла как есть
+        if (!filename.toLowerCase().endsWith(".txt")) { // Проверяем, есть ли расширение .txt
+            filePath += ".txt"; // Добавляем расширение, если его нет
+        }
+
+        System.out.println("Попытка загрузить карту из файла: " + new java.io.File(filePath).getAbsolutePath()); // Отладочный вывод
+
+        try (Scanner fileScanner = new Scanner(new java.io.File(filePath))) { // Используем filePath
             mapWidth = 10;
             mapHeight = 10;
             gameMap = new GameMap(mapWidth, mapHeight);
-            TerrainType[][] terrain = new TerrainType[mapHeight][mapWidth]; // Изменили тип
+            TerrainType[][] terrain = new TerrainType[mapHeight][mapWidth];
             String[][] map = new String[mapWidth][mapHeight];
-
-            System.out.println("Начинаем загрузку карты из файла " + filename + ".txt");
+            System.out.println("Начинаем загрузку карты из файла " + filePath);
 
             for (int i = 0; i < mapHeight; i++) {
                 if (fileScanner.hasNextLine()) {
@@ -301,12 +408,26 @@ public class GameController {
             }
             gameMap.setTerrain(terrain);
             gameMap.setMap(map);
-            System.out.println("Карта загружена из файла " + filename + ".txt");
+            System.out.println("Карта загружена из файла " + filePath);
 
         } catch (java.io.FileNotFoundException e) {
             System.out.println("Файл не найден.");
         }
     }
+    public void deleteMapFile(String filename) {
+        String filePath = filename;
+        if (!filename.toLowerCase().endsWith(".txt")) {
+            filePath += ".txt";
+        }
+        Path path = Paths.get(filePath);
+        try {
+            Files.delete(path);
+            System.out.println("Карта " + filePath + " успешно удалена.");
+        } catch (IOException e) {
+            System.err.println("Ошибка при удалении карты из файла: " + filePath + ": " + e.getMessage());
+        }
+    }
+
     public TerrainType getTerrainType(char symbol) {
         switch (symbol) {
             case '.':
@@ -401,7 +522,11 @@ public class GameController {
             }
         }
 
-        SaveData saveData = new SaveData(mapData, hero1Data, hero2Data, currentTurn, player1Gold, player2Gold, "map1", mapWidth, mapHeight, player1UnitsData, player2UnitsData, player1Gems, player2Gems, townHallLevel, crossbowTowerBuilt, ArenaBuilt, ArmoryBuilt, CathedralBuilt, GatesBuilt, GuardPostBuilt);
+        // Получаем юнитов и золото
+        List<Unit> units = players.get(0).getUnits(); // Получаем юнитов первого игрока
+        int gold = players.get(0).getGold().getAmount(); // Получаем золото первого игрока
+
+        SaveData saveData = new SaveData(mapData, hero1Data, hero2Data, currentTurn, player1Gold, player2Gold, "map1", mapWidth, mapHeight, player1UnitsData, player2UnitsData, player1Gems, player2Gems, townHallLevel, crossbowTowerBuilt, ArenaBuilt, ArmoryBuilt, CathedralBuilt, GatesBuilt, GuardPostBuilt, units, gold);
         SaveManager.saveGame(saveData, playerName, saveName);
     }
     private List<UnitData> getUnitsData(Player player) {
@@ -434,7 +559,16 @@ public class GameController {
         return unitsData;
     }
     public void loadGame(String playerName, String saveName) {
-        SaveData loadedData = SaveManager.loadGame(playerName, saveName);
+        if (players == null || players.isEmpty()) {
+            System.out.println("Ошибка: список игроков не инициализирован или пуст!");
+            return;
+        }
+
+        // Выбираем игрока, для которого загружаем данные
+        Player player = players.get(0); // Загружаем для первого игрока (можно изменить)
+
+        SaveData loadedData = SaveManager.loadGame(playerName, saveName, player); // Передаем объект Player
+
         if (loadedData != null) {
             mapWidth = loadedData.getMapWidth();
             mapHeight = loadedData.getMapHeight();
@@ -444,8 +578,8 @@ public class GameController {
 
             if (players != null && players.size() >= 2) {
 
-                Hero hero1 = new Hero(0, 0, "Hero1"); // Создаем героя для первого игрока
-                Hero hero2 = new Hero(5, 5, "Hero2"); // Создаем героя для второго игрока
+                Hero hero1 = new Hero(0, 0, "Hero1");
+                Hero hero2 = new Hero(5, 5, "Hero2");
 
                 players.get(0).addHero(hero1);  // Добавляем героя первому игроку
                 players.get(1).addHero(hero2);  // Добавляем героя второму игроку
@@ -473,6 +607,12 @@ public class GameController {
                 int player1Gems = loadedData.getPlayer1Gems();
                 int player2Gems = loadedData.getPlayer2Gems();
 
+                // === ИЗМЕНЕНИЕ ===
+                if (loadedData.getWonMiniBattle()) {
+                    player1Gold += 777; // Добавляем бонус
+                    System.out.println("Вы победили в мини-битве! Получен бонус золота: 777. Новое золото: " + player1Gold);
+                }
+
                 players.get(0).getGold().setAmount(player1Gold);
                 players.get(1).getGold().setAmount(player2Gold);
                 players.get(0).getGems().setAmount(player1Gems);
@@ -491,8 +631,6 @@ public class GameController {
                     restoreUnits(players.get(1), loadedData.getPlayer2Units());
 
                 }
-
-
             }
             // Восстанавливаем здания
             if (playerCity != null) {
@@ -550,7 +688,6 @@ public class GameController {
                 return null;
         }
     }
-
     private void restoreUnits(Player player, List<UnitData> unitsData) {
         if (player != null) {
             // Очищаем армию героя перед добавлением новых юнитов
@@ -578,9 +715,6 @@ public class GameController {
             }
         }
     }
-
-
-
     public void showLoadGameDialog() {
         String playerName = JOptionPane.showInputDialog(null, "Введите имя игрока:");
 
@@ -606,17 +740,12 @@ public class GameController {
                 }
             } else {
                 JOptionPane.showMessageDialog(null, "Сохранения для игрока " + playerName + " не найдены. Начните новую игру.");
-                // Здесь можно добавить код для начала новой игры
             }
         } else {
             JOptionPane.showMessageDialog(null, "Имя игрока не введено. Начните новую игру.");
-            // Здесь можно добавить код для начала новой игры
         }
     }
-    private String convertMapToString(GameMap gameMap) {
-        // Реализация преобразования GameMap в строку
-        return null;
-    }
+    private String convertMapToString(GameMap gameMap) {return null;} // Реализация преобразования GameMap в строку
 
     private GameMap convertStringToMap(String mapData) {
         // Восстановление GameMap из строки
@@ -629,17 +758,14 @@ public class GameController {
         return restoredMap; // Возвращаем восстановленную карту
     }
 
-    public List<Player> getPlayers() {
-        return players;
-    }
+    public List<Player> getPlayers() {return players;}
     public void setPlayers(List<Player> players) {
         this.players = players;
     }
-
     private void handleHeroInCity() {
+        logger.info("Герой в городе.");
         Hero currentHero = players.get(0).getCurrentHero();
         Player player = players.get(0);
-
         //   if (playerCity != null && currentHero.getX() == playerCity.getX() && currentHero.getY() == playerCity.getY()) {
         if (playerCity != null && currentHero.getX() == playerCity.getY() && currentHero.getY() == playerCity.getX()) {
             cityView.displayCityMenu(playerCity, currentHero, player); // Player
@@ -844,18 +970,32 @@ public class GameController {
         playerTurnStarted = false;
     }
     private boolean moveAiHero(int dx, int dy, Hero currentHero) {
+        if (currentHero == null) {
+            System.out.println("Нет текущего героя ИИ!");
+            return false;
+        }
+
         if (currentHero.getMovesLeft() > 0) {
             int newX = currentHero.getX() + dx;
             int newY = currentHero.getY() + dy;
+
             if (newX >= 0 && newX < mapWidth && newY >= 0 && newY < mapHeight) {
-                String tile = gameMap.getMap()[newY][newX];
+                String tile = gameMap.getMap()[newX][newY]; // Исправил порядок координат
                 if (!tile.equals("T") && !tile.equals("X")) {
                     if (tile.equals("G")) {
                         players.get(1).getGold().setAmount(players.get(1).getGold().getAmount() + 500);
-                        gameMap.getMap()[newY][newX] = ".";
+                        gameMap.getMap()[newX][newY] = "."; // Исправил порядок координат
                         System.out.println("ИИ собрал 500 золота!");
                     } else if (tile.equals("Z")) {
                         players.get(1).getGems().setAmount(players.get(1).getGems().getAmount() + 5);
+                    }
+
+                    // Проверяем, не наступил ли ИИ на игрока
+                    Hero playerHero = players.get(0).getCurrentHero();
+                    if (newX == playerHero.getX() && newY == playerHero.getY()) {
+                        System.out.println("Битва начинается!");
+                        battle(currentHero, playerHero);
+                        return false; // Битва началась, ход не засчитываем
                     }
 
                     currentHero.setX(newX);
@@ -865,6 +1005,7 @@ public class GameController {
                     return true;
                 } else {
                     System.out.println("ИИ не может пройти.");
+                    logger.log(Level.SEVERE,"герой не может пройти");
                     return false;
                 }
             } else {
@@ -887,6 +1028,7 @@ public class GameController {
             }
         }
         if (tavern == null) {
+            logger.warning("еще не построена таверна");// warning100
             System.out.println("В городе нет таверны.");
             return;
         }
@@ -982,6 +1124,12 @@ public class GameController {
             if (currentHero.getX() == playerCity.getX() && currentHero.getY() == playerCity.getY()) {
                 handleHeroInCity();
             }
+            Hotel hotel = getHotel(); // Получаем отель
+            if (hotel != null && currentHero.getX() == hotel.getX() && currentHero.getY() == hotel.getY()) {
+                // Игрок находится на клетке с отелем
+                showHotelMenu(); // Вызываем метод для отображения меню отеля
+                return; // Прекращаем дальнейшую обработку команд, так как мы в отеле
+            }
             if (currentHero.getMovesLeft() > 0) {
                 try {
                     String command = scanner.nextLine();
@@ -1013,9 +1161,11 @@ public class GameController {
                             moved = moveHero(1, 1, currentHero);
                             break;
                         case "g":
+                            logger.info("Игрок " + players.get(0).getName() + " сменил героя."); // INFO100
                             switchHero();
                             break;
                         case "f":
+                            logger.info("Игрок " + players.get(0).getName() + " закончил свой суперский  ход."); // INFO100
                             currentPlayer = 2;
                             aiTurn();
                             break;
@@ -1025,6 +1175,13 @@ public class GameController {
                         case "addmoney":
                             players.get(0).getGold().setAmount(players.get(0).getGold().getAmount() + 5000);
                             System.out.println((1) + ". " + players.get(0).getName() + " Здоровье: " + players.get(0).getGold().getAmount() + ", Гемы: " + players.get(0).getGems().getAmount());
+                            break;
+                        case "set":
+                            System.out.print("Введите количество занятых номеров: ");
+                            int rooms = scanner.nextInt();
+                            scanner.nextLine(); // Consume newline
+                            getHotel().setOccupiedRooms(rooms);
+                            System.out.println("Количество занятых номеров установлено в " + rooms);
                             break;
                         case "k":
                             System.out.print("Введите имя игрока: ");
@@ -1054,11 +1211,13 @@ public class GameController {
                     }
                     displayHeroStats();
                 } catch (Exception e) {
+                    logger.warning( "Ошибка при чтении ввода игрока: " + e.getMessage()); // WARNING
                     System.out.println("Error reading input: " + e.getMessage());
                 }finally {
                    scanner = new Scanner(System.in);
                 }
             } else {
+                logger.warning("У героя " + players.get(0).getCurrentHero().getName() + " закончились очки перемещения."); // WARNING
                 currentPlayer = 2;
                 aiTurn();
             }
@@ -1124,6 +1283,7 @@ public class GameController {
     }
     public boolean moveHero(int dx, int dy, Hero currentHero) {
         if (currentHero == null) {
+            logger.log(Level.SEVERE,"нет текущего героя");
             System.out.println("Нет текущего героя!");
             return false;
         }
@@ -1163,6 +1323,7 @@ public class GameController {
                     }
                     return true;
                 } else {
+                    logger.log(Level.SEVERE,"герой не может пройти");
                     System.out.println("Стой! Убьешься.");
                     return false;
                 }
@@ -1196,7 +1357,7 @@ public class GameController {
     }
 
     public void setGameMap(GameMap gameMap) {
-
+        this.gameMap = gameMap;
     }
     public Hero getHero() {
         return hero;
@@ -1282,5 +1443,112 @@ public class GameController {
         MapEditor mapEditor = new MapEditor(mapWidth, mapHeight);
         mapEditor.startEditor();
     }
-    
+    public void processHeroMove(Hero hero1, Hero hero2) {
+        if (areHeroesColliding(hero1, hero2)) {
+            battleController.startBattle(hero1, hero2);
+        }
+    }
+
+    private boolean areHeroesColliding(Hero hero1, Hero hero2) {
+        return hero1.getX() == hero2.getX() && hero1.getY() == hero2.getY();
+    }
+    public Hotel getHotel() {
+        return gameMap.getHotel();
+    }
+
+    private void showHotelMenu() {
+        Hotel hotel = getHotel();
+        if (hotel == null) {
+            System.out.println("Ошибка: Отель не найден на карте!");
+            return;
+        }
+
+        System.out.println("\n--- Отель 'У погибшего альпиниста' ---");
+        System.out.println("Свободных номеров: " + hotel.getAvailableRooms());
+
+        System.out.println("Доступные услуги:");
+        System.out.println("1. Короткий отдых (1 ход, +2% к здоровью)");
+        System.out.println("2. Длинный отдых (3 хода, +3% к здоровью)");
+        System.out.println("3. Выйти");
+
+        System.out.print("Выберите услугу (1-3): ");
+        String choice = scanner.nextLine();
+
+        switch (choice) {
+            case "1":
+                tryEnterHotel(hotel); // Короткий отдых
+                break;
+            case "2":
+                tryEnterHotel(hotel); // Длинный отдых
+                break;
+            case "3":
+                System.out.println("Вы покинули отель.");
+                moveHeroOutOfHotel();
+                break;
+            default:
+                System.out.println("Неверный ввод.");
+        }
+    }
+
+    private void tryEnterHotel(Hotel hotel) {
+        Hero currentHero = players.get(0).getCurrentHero();
+        if (currentHero == null) {
+            logger.log(Level.SEVERE, "герой не найден"); //ERROR
+            System.out.println("Ошибка: Герой не найден!");
+            return;
+        }
+        try {
+            if (hotel.enter(players.get(0))) {
+                logger.info("Игрок успешно заехал в отель"); //INFO100
+                System.out.println("Успешное заселение!");
+
+            } else {
+                System.out.println("Не удалось заселиться в отель.");
+                moveHeroOutOfHotel();
+            }
+        } catch (InterruptedException e) {
+            System.err.println("Ошибка при заселении в отель: " + e.getMessage());
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void moveHeroOutOfHotel() {
+        Hero currentHero = players.get(0).getCurrentHero();
+        if (currentHero != null) {
+            currentHero.setX(6);
+            currentHero.setY(3);
+            System.out.println("Герой перемещен из отеля.");
+        }
+    }
+    private void initializeNPCs() {
+        Hotel hotel = gameMap.getHotel();
+        if (hotel != null) {
+            for (int i = 0; i < 3; i++) {
+                NPC npc = new NPC("NPC " + (i + 1), hotel);
+                npcs.add(npc);
+                npcExecutor.submit(npc); // Запускаем поток NPC
+            }
+        }
+    }
+
+    public void stopNPCs() {
+        npcExecutor.shutdownNow();
+    }
+
+    /*private static void configureLogger() throws IOException {
+        FileHandler fileHandler = new FileHandler("game.log", true); // Записываем логи в файл game.log, true - append
+        SimpleFormatter formatter = new SimpleFormatter();
+        fileHandler.setFormatter(formatter);
+
+        logger.addHandler(fileHandler);
+        logger.setLevel(Level.INFO); // Устанавливаем уровень логирования INFO
+    }
+    private void logToFile(String message) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(LOG_FILE, true))) { // true - для добавления в конец файла
+            writer.append(message);
+            writer.newLine(); // Добавляем перенос строки
+        } catch (IOException e) {
+            System.err.println("Ошибка при записи в лог-файл: " + e.getMessage());
+        }
+    }*/
 }

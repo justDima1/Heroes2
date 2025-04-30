@@ -3,7 +3,6 @@ package view;
 import model.buildings.WitcherSchool;
 import model.heroes.Hero;
 import model.spells.*;
-
 import java.util.Scanner;
 
 public class WitcherSchoolInterface {
@@ -47,8 +46,24 @@ public class WitcherSchoolInterface {
 
             if (choice > 0 && choice <= availableSpells.length) {
                 Spell selectedSpell = availableSpells[choice - 1];
-                school.train(selectedSpell);
-                hero.getLearnedSpells().add(selectedSpell.getName()); // <--- Добавляем заклинание
+                System.out.println("Начинаем обучение заклинанию " + selectedSpell.getName() + "...");
+
+                // Запускаем обучение в отдельном потоке
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(selectedSpell.getTrainingTime() * 1000); // Пауза на время обучения
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        System.err.println("Обучение заклинанию прервано!");
+                        return;
+                    }
+
+                    // После обучения
+                    System.out.println("Обучение заклинанию " + selectedSpell.getName() + " завершено!");
+                    hero.getLearnedSpells().add(selectedSpell.getName()); // Добавляем заклинание
+                }).start();
+
+                System.out.println("Вы можете продолжить свои приключения, пока герой изучает заклинание.");
             } else if (choice == 0) {
                 System.out.println("Вы покидаете школу ведьмаков.");
             } else {
